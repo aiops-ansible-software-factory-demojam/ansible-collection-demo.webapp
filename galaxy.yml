@@ -1,0 +1,20 @@
+---
+namespace: demo
+name: webapp
+version: 0.1.0
+readme: README.md
+authors:
+  - Demo Maintainer
+description: Demo web application collection with an nginx role and KubeVirt Molecule tests.
+license:
+  - MIT
+tags:
+  - infrastructure
+repository: https://github.com/aiops-ansible-software-factory-demojam/ansible-collection-demo.webapp
+build_ignore:
+  - .gitea
+  - devfile.yaml
+  - catalog-info.yaml
+  - .venv
+  - .ansible
+  - .cache

@@ -1,0 +1,16 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ansible-collection-demo.webapp
+  description: Demo web application collection with an nginx role and KubeVirt Molecule tests.
+  annotations:
+    backstage.io/source-location: url:https://github.com/aiops-ansible-software-factory-demojam/ansible-collection-demo.webapp
+  links:
+    - url: https://github.com/aiops-ansible-software-factory-demojam/ansible-collection-demo.webapp
+      title: Forgejo repository
+      icon: scm
+spec:
+  type: ansible-collection
+  lifecycle: experimental
+  owner: user:default/demo-agent
