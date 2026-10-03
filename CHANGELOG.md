@@ -4,6 +4,8 @@
 
 - Added pinned pre-commit checks for Ansible, YAML, whitespace, merge conflicts,
   and large files, with Make commands for setup, hooks, lint, and collection builds.
+- Registered the current checkout's collection namespace during setup so offline
+  checks resolve local roles in fresh sandboxes.
 
 ## 0.1.0
 
