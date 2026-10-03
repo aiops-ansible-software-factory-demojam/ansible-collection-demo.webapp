@@ -33,9 +33,9 @@ commands:
         isDefault: true
   - id: lint
     exec:
-      label: ansible-lint
+      label: collection lint and pre-commit checks
       component: tools
-      commandLine: ansible-lint
+      commandLine: make lint
       workingDir: /projects/collection
       group:
         kind: test
