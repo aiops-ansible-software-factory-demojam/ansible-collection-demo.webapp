@@ -29,8 +29,9 @@ Use Python 3.12 or newer and Make. `make setup` creates `.venv`, installs the
 versions in `requirements-dev.txt`, and installs the pinned Molecule collection
 dependencies. It reruns when those requirements change. No system Python
 packages are modified. Setup also links this checkout into the ignored
-`.ansible/collections` namespace so offline lint and Molecule resolve
-`demo.webapp` from the current source, including in a fresh sandbox.
+`.ansible/source` namespace so the offline lint hook resolves `demo.webapp`
+from the current source, including in a fresh sandbox. This path is scoped
+to the lint hook; Molecule keeps its normal collection installation path.
 Run `make hooks` once in each GitHub or Forgejo checkout
 to install the Git hooks; hook installation is local and is not copied by
 bootstrap's repository refresh.

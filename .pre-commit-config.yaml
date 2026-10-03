@@ -55,7 +55,9 @@ repos:
           - yaml
       - id: ansible-lint
         name: Lint Ansible collection
-        entry: ansible-lint
+        # Use current source during offline lint without changing Galaxy's
+        # installation destination for Molecule or other collection commands.
+        entry: env ANSIBLE_COLLECTIONS_PATH=.ansible/source:~/.ansible/collections ansible-lint
         language: python
         additional_dependencies:
           - ansible-core==2.21.4

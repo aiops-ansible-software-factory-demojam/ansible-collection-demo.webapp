@@ -25,8 +25,8 @@ $(VENV)/.dev-deps: requirements-dev.txt extensions/molecule/requirements-test.ym
 	touch "$@"
 
 setup: $(VENV)/.dev-deps
-	mkdir -p .ansible/collections/ansible_collections/demo
-	ln -sfn "$(CURDIR)" .ansible/collections/ansible_collections/demo/webapp
+	mkdir -p .ansible/source/ansible_collections/demo
+	ln -sfn "$(CURDIR)" .ansible/source/ansible_collections/demo/webapp
 
 hooks: setup
 	"$(VENV)/bin/pre-commit" install --install-hooks
