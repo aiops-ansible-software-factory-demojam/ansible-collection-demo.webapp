@@ -18,3 +18,8 @@ build_ignore:
   - .venv
   - .ansible
   - .cache
+  - .pre-commit-config.yaml
+  - .ansible-lint
+  - .yamllint
+  - requirements-dev.txt
+  - Makefile

@@ -1,0 +1,9 @@
+---
+profile: production
+strict: true
+# make setup installs the real Molecule dependencies before linting.
+offline: true
+exclude_paths:
+  - .venv/
+  - .ansible/
+  - .cache/

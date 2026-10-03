@@ -12,15 +12,52 @@ Ansible collection name is `demo.webapp`.
 Run these commands from the collection root in a demo Omnigent agent sandbox:
 
 ```sh
-ansible-galaxy collection install -r extensions/molecule/requirements-test.yml
-ansible-lint
-ansible-galaxy collection build --output-path /tmp
+make setup
+make hooks
+make lint
+make build
 molecule test
 ```
 
 The default scenario prints hello world on CentOS Stream 10, then verifies SSH
 connectivity and the guest operating system. `roles/example` remains a starter
 role; add a scenario to converge your role and verify its intended behavior.
+
+## Lint and pre-commit
+
+Use Python 3.12 or newer and Make. `make setup` creates `.venv`, installs the
+versions in `requirements-dev.txt`, and installs the pinned Molecule collection
+dependencies. It reruns when those requirements change. No system Python
+packages are modified. Setup also links this checkout into the ignored
+`.ansible/source` namespace so the offline lint hook resolves `demo.webapp`
+from the current source, including in a fresh sandbox. This path is scoped
+to the lint hook; Molecule keeps its normal collection installation path.
+Run `make hooks` once in each GitHub or Forgejo checkout
+to install the Git hooks; hook installation is local and is not copied by
+bootstrap's repository refresh.
+
+`make lint` runs the same [pre-commit](https://pre-commit.com/) checks across all
+tracked files: trailing whitespace, final newlines, merge conflicts, large
+files, YAML syntax and duplicate keys, YAML style, and
+[Ansible lint](https://docs.ansible.com/projects/lint/configuring/).
+Ansible lint checks the entire collection with the `production` profile, including
+Molecule playbooks. Installed hooks run automatically on each commit, and
+their pinned Python environments also work without activating `.venv`.
+
+The first setup and hook run need package download access. Subsequent lint
+runs use the cached tools and installed collections and need no cluster
+credentials. `.yamllint` and `.ansible-lint` define the shared rules; there are
+no blanket rule skips or mocked modules. Development configuration is excluded
+from the built Galaxy artifact.
+
+When whitespace hooks fix files, review and stage those fixes, then retry the
+commit. To run one check directly:
+
+```sh
+.venv/bin/pre-commit run ansible-lint --all-files
+```
+
+## Molecule tests
 
 The sandbox supplies Ansible Development Tools, the Kubernetes Python client,
 SSH, `KUBECONFIG`, and `MOLECULE_GLOB`. Molecule installs its pinned collection
@@ -87,3 +124,5 @@ symlinks are needed; shared `config.yml` supplies Molecule's role search path.
 - `extensions/molecule/default/` contains only `molecule.yml`, hello-world `converge.yml`, and `verify.yml`.
 - `ansible.cfg` and `Makefile` configure collection resolution and root-level test commands.
 - `devfile.yaml` defines development commands for editors that support Devfiles.
+- `.pre-commit-config.yaml`, `.ansible-lint`, and `.yamllint` define development checks.
+- `requirements-dev.txt` pins the Python tools installed by `make setup`.
