@@ -1,2 +1,3 @@
 ---
 nginx_service_enabled: true
+nginx_docroot: /web
