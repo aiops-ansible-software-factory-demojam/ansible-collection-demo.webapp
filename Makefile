@@ -1,8 +1,10 @@
 export MOLECULE_GLOB := extensions/molecule/*/molecule.yml
 
-.PHONY: test converge destroy
-test:
+.PHONY: molecule test converge destroy
+molecule:
 	molecule test --all
+
+test: molecule
 
 converge:
 	molecule converge --all

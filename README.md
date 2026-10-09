@@ -12,20 +12,24 @@ Ansible collection name is `demo.webapp`.
 Run these commands from the collection root in a demo Omnigent agent sandbox:
 
 ```sh
-ansible-galaxy collection install -r extensions/molecule/requirements-test.yml
 ansible-lint
 ansible-galaxy collection build --output-path /tmp
-molecule test
+make molecule
 ```
 
-The default scenario prints hello world on CentOS Stream 10, then verifies SSH
-connectivity and the guest operating system. `roles/example` remains a starter
-role; add a scenario to converge your role and verify its intended behavior.
+The nginx scenario installs nginx on CentOS Stream 10, then verifies HTTP,
+worker identity, SSH connectivity, and the guest operating system.
+`roles/example` remains a starter role; add a scenario to converge your role
+and verify its intended behavior.
 
 The sandbox supplies Ansible Development Tools, the Kubernetes Python client,
-SSH, `KUBECONFIG`, and `MOLECULE_GLOB`. Molecule installs its pinned collection
-dependencies automatically. Run from the collection root so the shared
-`extensions/molecule/config.yml` is discovered. `make test` runs both scenarios sequentially.
+SSH, `KUBECONFIG`, `MOLECULE_GLOB`, and preloaded collection dependencies. If test
+requirements change, install them with `ansible-galaxy collection install -r
+extensions/molecule/requirements-test.yml` before testing. Production collection
+dependencies still belong in `galaxy.yml`. Run from the collection root so the
+shared `extensions/molecule/config.yml` is discovered. `make molecule` runs all
+scenarios, currently nginx; adding a scenario requires no Makefile change.
+`make test` remains an alias.
 
 The shared `utils/inventory/hosts.yml` enables `centos-stream10`, which clones
 its CDI DataSource in `openshift-virtualization-os-images`. The VM is created in
@@ -34,9 +38,8 @@ out until RHEL package repository prerequisites are configured. Each test run
 provisions, converges, verifies, and destroys the CentOS host:
 
 ```sh
-molecule test                 # CentOS Stream 10
-molecule test -s nginx       # Install nginx and verify HTTP and worker identity
-make test                     # Both scenarios, sequentially
+make molecule               # All scenarios, currently nginx
+molecule test -s nginx       # Run only nginx when more scenarios are added
 ```
 
 Each VM gets two vCPUs, 2 GiB RAM, a disposable 30 GiB disk, and a generated SSH key. Connections
@@ -44,12 +47,8 @@ use the VM's pod IP; no NodePort or cluster-wide node permissions are needed.
 The namespace quota permits up to four test VMs and 120 GiB of requested disks.
 
 The YAML inventory uses the fixed hostname `centos-stream10`,
-which the provisioner also uses as the VM name. Collision risk is accepted
-temporarily: serialize test runs across all demo sandboxes, collections, and scenarios sharing
-`molecule-tests`. Overlapping runs can modify or delete each other's VM. After
-an interrupted run, use `molecule destroy` from the same collection once no
-other run is using the test VM. Provisioner-managed run naming is tracked in
-[molecule_provisioners issue #59](https://github.com/david-igou/ansible-collection-molecule_provisioners/issues/59).
+which the provisioner also uses as the VM name. This demo runs one agent. After
+an interrupted run, use `make destroy` from the same collection.
 
 These VM tests are configured for the demo's agent sandboxes. Local devcontainers
 and standalone Devfile workspaces need their own credentials and VM network
@@ -84,6 +83,5 @@ symlinks are needed; shared `config.yml` supplies Molecule's role search path.
 - `extensions/molecule/requirements-test.yml` pins the provisioner release.
 - `extensions/molecule/utils/inventory/` tracks boot images and expected OS versions for all scenarios.
 - `extensions/molecule/utils/playbooks/` supplies create, prepare, destroy, and common host verification.
-- `extensions/molecule/default/` contains only `molecule.yml`, hello-world `converge.yml`, and `verify.yml`.
 - `ansible.cfg` and `Makefile` configure collection resolution and root-level test commands.
 - `devfile.yaml` defines development commands for editors that support Devfiles.

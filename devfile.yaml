@@ -44,7 +44,7 @@ commands:
     exec:
       label: molecule test (CentOS Stream 10 KubeVirt VM)
       component: tools
-      commandLine: make test
+      commandLine: make molecule
       workingDir: /projects/collection
       group:
         kind: test
