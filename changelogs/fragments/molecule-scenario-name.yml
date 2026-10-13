@@ -1,0 +1,3 @@
+---
+bugfixes:
+  - Pass Molecule's scenario name to the shared create playbook for both guest backends.
