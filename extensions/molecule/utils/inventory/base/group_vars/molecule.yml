@@ -1,5 +1,5 @@
 ---
-mp_backend: kubevirt
+mp_backend: "{{ lookup('ansible.builtin.env', 'PROVISIONER', default='kubevirt') }}"
 mp_defaults:
   kubevirt:
     namespace: molecule-tests
