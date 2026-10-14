@@ -13,7 +13,8 @@ ansible:
   executor:
     args:
       ansible_playbook:
-        - --inventory=../utils/inventory/
+        - --inventory=../utils/inventory/base/
+        - --inventory=../utils/inventory/${PROVISIONER:-kubevirt}/
         - --inventory=${MOLECULE_EPHEMERAL_DIRECTORY}/inventory/
   playbooks:
     create: ../utils/playbooks/create.yml

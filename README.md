@@ -1,10 +1,10 @@
 # demo.webapp
 
-Demo web application collection with an nginx role and KubeVirt Molecule tests.
+Demo web application collection with an nginx role and AWS or CNV Molecule tests.
 
 This demo collection follows the Ansible collection golden-path layout. Its
-nginx role and Molecule scenarios use disposable CentOS Stream 10
-KubeVirt VMs. The Forgejo repository remains `ansible-collection-demo.webapp`; the
+nginx role and Molecule scenarios use disposable Linux guests. CNV selects
+CentOS Stream 10; AWS selects pinned RHEL 9 and RHEL 10 images. The Forgejo repository remains `ansible-collection-demo.webapp`; the
 Ansible collection name is `demo.webapp`.
 
 ## Get started
@@ -12,59 +12,57 @@ Ansible collection name is `demo.webapp`.
 Run these commands from the collection root in a demo Omnigent agent sandbox:
 
 ```sh
-ansible-galaxy collection install -r extensions/molecule/requirements-test.yml
 ansible-lint
 ansible-galaxy collection build --output-path /tmp
-molecule test
+make molecule
 ```
 
-The default scenario prints hello world on CentOS Stream 10, then verifies SSH
-connectivity and the guest operating system. `roles/example` remains a starter
-role; add a scenario to converge your role and verify its intended behavior.
+The nginx scenario installs nginx on each selected guest, then verifies HTTP,
+the package worker account, Enforcing SELinux, SSH and the operating system.
+`roles/example` remains a starter role; add a scenario to converge your role
+and verify its intended behavior.
 
-The sandbox supplies Ansible Development Tools, the Kubernetes Python client,
-SSH, `KUBECONFIG`, and `MOLECULE_GLOB`. Molecule installs its pinned collection
-dependencies automatically. Run from the collection root so the shared
-`extensions/molecule/config.yml` is discovered. `make test` runs both scenarios sequentially.
+The sandbox supplies Ansible Development Tools, SSH, the selected test
+identity, `MOLECULE_GLOB`, and preloaded dependencies. CNV also supplies a
+scoped `KUBECONFIG`; AWS supplies its credential-file path, network and image
+settings. Run from the collection root so the shared `config.yml` is discovered.
+`make molecule` runs every scenario; `make test` is an alias. Production
+collection dependencies still belong in `galaxy.yml`.
 
-The shared `utils/inventory/hosts.yml` enables `centos-stream10`, which clones
-its CDI DataSource in `openshift-virtualization-os-images`. The VM is created in
-`molecule-tests`. The `rhel10` entry and image/version metadata remain commented
-out until RHEL package repository prerequisites are configured. Each test run
-provisions, converges, verifies, and destroys the CentOS host:
+Common inventory loads from `utils/inventory/base/`, followed by the selected
+`kubevirt/` or `aws/` host layer and the generated connection inventory.
+CNV clones the CentOS Stream 10 DataSource into `molecule-tests`, with two vCPUs,
+2 GiB RAM, a disposable 30 GiB disk and PodIP SSH. Its namespace quota permits
+four VMs and 120 GiB of requested disks. AWS uses the sandbox's pinned RHEL 9
+and RHEL 10 images in a provided public subnet, with `t3.medium` instances,
+encrypted 30 GiB gp3 disks and public-IP SSH as `ec2-user`.
+
+Test requirements pin the published `david_igou.molecule_provisioners:0.0.7-alpha`
+release. The sandbox preloads its verified Galaxy artifact. Shared inventory
+maps the mounted profile to the release's `mp_defaults.aws` fields, including
+the expected account and bootstrap-owned security group. Tests retain that group
+and network, and destroy their own guests, disks and generated SSH keys.
 
 ```sh
-molecule test                 # CentOS Stream 10
-molecule test -s nginx       # Install nginx and verify HTTP and worker identity
-make test                     # Both scenarios, sequentially
+make molecule               # All scenarios, currently nginx
+molecule test -s nginx       # Run only nginx when more scenarios are added
 ```
 
-Each VM gets two vCPUs, 2 GiB RAM, a disposable 30 GiB disk, and a generated SSH key. Connections
-use the VM's pod IP; no NodePort or cluster-wide node permissions are needed.
-The namespace quota permits up to four test VMs and 120 GiB of requested disks.
-
-The YAML inventory uses the fixed hostname `centos-stream10`,
-which the provisioner also uses as the VM name. Collision risk is accepted
-temporarily: serialize test runs across all demo sandboxes, collections, and scenarios sharing
-`molecule-tests`. Overlapping runs can modify or delete each other's VM. After
-an interrupted run, use `molecule destroy` from the same collection once no
-other run is using the test VM. Provisioner-managed run naming is tracked in
-[molecule_provisioners issue #59](https://github.com/david-igou/ansible-collection-molecule_provisioners/issues/59).
-
-These VM tests are configured for the demo's agent sandboxes. Local devcontainers
-and standalone Devfile workspaces need their own credentials and VM network
-access. Preflight checks each host's golden image is ready before provisioning.
-Verification checks each connected guest's distribution and major version
-against that host's inventory settings.
+The shared provisioner assigns run identities and retains cleanup state in
+Molecule's ephemeral directory. After an interrupted run, use `make destroy`
+from the same sandbox and collection. These tests need the selected backend's
+credentials and reachable guest networking; a standalone workspace must supply
+those inputs. Verification checks every connected guest against its expected
+OS and major version. This demo runs one coding agent.
 
 To add another OS image, add a host to
-`extensions/molecule/utils/inventory/hosts.yml` with a distinct fixed name,
-its `mp.kubevirt.boot_source`, and expected distribution / major version.
-Common compute and SSH settings stay in `utils/inventory/group_vars/molecule.yml`;
-override them in the host's `mp.kubevirt` settings when required.
-Grant `get` for the new DataSource in the GitOps `molecule-image-cloner` Role
+the selected `extensions/molecule/utils/inventory/<backend>/hosts.yml`, with
+a distinct inventory name and expected OS/major version. CNV hosts specify
+`mp.kubevirt.boot_source`; AWS hosts specify an exact `mp.aws.image_id`. Common
+settings stay in `utils/inventory/base/group_vars/molecule.yml`.
+For CNV, grant `get` for the new DataSource in the GitOps `molecule-image-cloner` Role
 before using it. The disk must be at least as large as the source image, and the
-guest must support cloud-init SSH key injection. Each VM gets one boot DataVolume.
+guest must support cloud-init SSH key injection. Each CNV VM gets one boot DataVolume.
 
 To add a scenario, create a directory under `extensions/molecule/` with only
 `molecule.yml`, `converge.yml`, and `verify.yml`. Set `scenario.name` to the
@@ -84,6 +82,5 @@ symlinks are needed; shared `config.yml` supplies Molecule's role search path.
 - `extensions/molecule/requirements-test.yml` pins the provisioner release.
 - `extensions/molecule/utils/inventory/` tracks boot images and expected OS versions for all scenarios.
 - `extensions/molecule/utils/playbooks/` supplies create, prepare, destroy, and common host verification.
-- `extensions/molecule/default/` contains only `molecule.yml`, hello-world `converge.yml`, and `verify.yml`.
 - `ansible.cfg` and `Makefile` configure collection resolution and root-level test commands.
 - `devfile.yaml` defines development commands for editors that support Devfiles.

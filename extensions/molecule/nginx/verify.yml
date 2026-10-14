@@ -7,6 +7,16 @@
   become: true
   gather_facts: false
   tasks:
+    - name: Read the guest SELinux mode
+      ansible.builtin.command: getenforce
+      register: nginx_selinux_mode
+      changed_when: false
+
+    - name: Require nginx to work with SELinux enforcing
+      ansible.builtin.assert:
+        that: nginx_selinux_mode.stdout | trim == 'Enforcing'
+        fail_msg: The collection must preserve enforcing mode while serving HTTP.
+
     - name: Request the nginx home page
       ansible.builtin.uri:
         url: http://127.0.0.1/
