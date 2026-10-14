@@ -37,6 +37,12 @@ four VMs and 120 GiB of requested disks. AWS uses the sandbox's pinned RHEL 9
 and RHEL 10 images in a provided public subnet, with `t3.medium` instances,
 encrypted 30 GiB gp3 disks and public-IP SSH as `ec2-user`.
 
+Test requirements pin the published `david_igou.molecule_provisioners:0.0.7-alpha`
+release. The sandbox preloads its verified Galaxy artifact. Shared inventory
+maps the mounted profile to the release's `mp_defaults.aws` fields, including
+the expected account and bootstrap-owned security group. Tests retain that group
+and network, and destroy their own guests, disks and generated SSH keys.
+
 ```sh
 make molecule               # All scenarios, currently nginx
 molecule test -s nginx       # Run only nginx when more scenarios are added
