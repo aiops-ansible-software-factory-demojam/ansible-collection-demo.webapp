@@ -111,3 +111,8 @@ python -m unittest discover -s tests -p test_invoice_portal.py -v
 They reproduce the vulnerable behavior and fail remediation verification on
 the unpatched release. Full remediation acceptance requires the real signed
 Lightwell wheel and EC2 Molecule lifecycle checks.
+
+With Ansible installed, run
+`python -m unittest discover -s tests -p test_invoice_source_revision.py -v`
+to exercise the source guard in an AAP-like execution copy without `.git` and
+in a direct Git checkout. Missing or mismatched revisions must fail.

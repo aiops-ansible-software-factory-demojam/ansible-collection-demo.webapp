@@ -26,7 +26,10 @@
           - invoice_candidate_sha | default('') is match('^[0-9a-f]{40}$')
           - invoice_release_channel in ['baseline', 'lightwell']
 
-    - name: Read the actual AAP project revision
+    # AAP strips .git from its execution copy and supplies the protected
+    # awx_project_revision variable, matching the job's scm_revision field.
+    - name: Read the Git revision outside AAP
+      when: awx_job_id is not defined
       ansible.builtin.command:
         argv: [git, rev-parse, HEAD]
         chdir: "{{ playbook_dir }}/.."
@@ -35,13 +38,19 @@
       register: invoice_actual_revision
       changed_when: false
 
+    - name: Select the actual execution revision
+      ansible.builtin.set_fact:
+        invoice_execution_revision: >-
+          {{ awx_project_revision | default('') if awx_job_id is defined
+             else invoice_actual_revision.stdout | trim }}
+
     - name: Require the execution source to match the approved revision
       ansible.builtin.assert:
-        that: invoice_actual_revision.stdout | trim == invoice_candidate_sha
+        that: invoice_execution_revision == invoice_candidate_sha
 
     - name: Record the source revision for deployment evidence
       ansible.builtin.set_fact:
-        invoice_portal_source_revision: "{{ invoice_candidate_sha }}"
+        invoice_portal_source_revision: "{{ invoice_execution_revision }}"
 
     - name: Require RHEL for application deployment
       ansible.builtin.assert:

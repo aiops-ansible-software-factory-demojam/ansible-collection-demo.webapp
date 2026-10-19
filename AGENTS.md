@@ -36,3 +36,7 @@ the selected wheel digest, and enforcing SELinux. Keep changes scoped to the iss
 update the README when public behavior changes. Push a feature branch and open
 a PR against `main`, referencing the issue. Do not merge the PR or push directly
 to `main`.
+
+AAP removes `.git` from the execution copy. In an AAP job, check the protected
+`awx_project_revision` against the requested commit. Outside AAP, check the
+actual Git HEAD. `playbooks/invoice.yml` demonstrates this source contract.
