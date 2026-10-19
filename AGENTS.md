@@ -5,7 +5,11 @@ configuration defaults in `roles/<role>/defaults/main.yml` and prefix their
 names with the role name. Keep secret lookups outside roles.
 
 Run `make molecule` from the collection root in the demo Omnigent sandbox.
-It runs every scenario discovered by `MOLECULE_GLOB`. The sandbox selects the
+It runs the nginx scenarios discovered by `MOLECULE_GLOB`. For invoice issues,
+use `make molecule MOLECULE_SCENARIO=invoice_portal` and the same selector with
+`make destroy` after an interrupted run. The invoice scenario requires the
+mounted Lightwell material and signing key; keep it explicitly selected.
+The sandbox selects the
 backend and preloads the exact provisioner version from
 `extensions/molecule/requirements-test.yml`. Keep shared settings in
 `extensions/molecule/config.yml` and `utils/inventory/base/group_vars/`.
@@ -25,8 +29,10 @@ available. If test requirements change, install
 `extensions/molecule/requirements-test.yml` before testing. Declare production
 collection dependencies in `galaxy.yml`; sandbox preloads do not replace them.
 
-For this collection, test role changes with `make molecule` and check
-HTTP and actual nginx worker identity. Keep changes scoped to the issue and
+For nginx issues, test role changes with `make molecule` and check
+HTTP and actual nginx worker identity. For invoice issues, run the complete
+invoice lifecycle on both RHEL versions and check actual document processing,
+the selected wheel digest, and enforcing SELinux. Keep changes scoped to the issue and
 update the README when public behavior changes. Push a feature branch and open
 a PR against `main`, referencing the issue. Do not merge the PR or push directly
 to `main`.

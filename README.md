@@ -44,7 +44,7 @@ the expected account and bootstrap-owned security group. Tests retain that group
 and network, and destroy their own guests, disks and generated SSH keys.
 
 ```sh
-make molecule               # All scenarios, currently nginx
+make molecule               # All nginx scenarios; invoice is opt-in
 molecule test -s nginx       # Run only nginx when more scenarios are added
 ```
 
@@ -93,6 +93,14 @@ implements the operational Lightwell workflow and its recovery tests there.
 The `invoice_portal` Molecule scenario executes that authored playbook against
 disposable RHEL EC2 guests. See the GitOps repository's
 [complete walkthrough](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/blob/feature/lightwell-invoice-demo/docs/invoice-lightwell-demo.md).
+
+Select the invoice lifecycle explicitly, with the mounted artifact material
+and public signing key available in the sandbox:
+
+```bash
+make molecule MOLECULE_SCENARIO=invoice_portal
+make destroy MOLECULE_SCENARIO=invoice_portal  # Recovery after interruption
+```
 
 The application unit checks use actual stock PyPDF2 3.0.1:
 
