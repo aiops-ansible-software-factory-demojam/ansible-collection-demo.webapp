@@ -1,0 +1,32 @@
+[Unit]
+Description=Invoice processing application
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ invoice_portal_user }}
+Group={{ invoice_portal_user }}
+WorkingDirectory={{ invoice_portal_root }}/current/app
+ExecStart={{ invoice_portal_root }}/current/venv/bin/python {{ invoice_portal_root }}/current/app/portal.py --port {{ invoice_portal_port }}
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=INVOICE_PROCESS_TIMEOUT=2
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+MemoryMax=256M
+CPUQuota=100%
+TasksMax=32
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

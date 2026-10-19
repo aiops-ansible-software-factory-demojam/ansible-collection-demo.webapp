@@ -84,3 +84,22 @@ symlinks are needed; shared `config.yml` supplies Molecule's role search path.
 - `extensions/molecule/utils/playbooks/` supplies create, prepare, destroy, and common host verification.
 - `ansible.cfg` and `Makefile` configure collection resolution and root-level test commands.
 - `devfile.yaml` defines development commands for editors that support Devfiles.
+# Invoice processing scenario
+
+`roles/invoice_portal` contains the PDF application and common authenticated
+release tasks. `playbooks/invoice.yml` installs the known vulnerable baseline.
+`playbooks/invoice-remediate.yml` is an explicit authoring stub: the demo agent
+implements the operational Lightwell workflow and its recovery tests there.
+The `invoice_portal` Molecule scenario executes that authored playbook against
+disposable RHEL EC2 guests. See the GitOps repository's
+[complete walkthrough](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/blob/feature/lightwell-invoice-demo/docs/invoice-lightwell-demo.md).
+
+The application unit checks use actual stock PyPDF2 3.0.1:
+
+```bash
+python -m unittest discover -s tests -p test_invoice_portal.py -v
+```
+
+They reproduce the vulnerable behavior and fail remediation verification on
+the unpatched release. Full remediation acceptance requires the real signed
+Lightwell wheel and EC2 Molecule lifecycle checks.

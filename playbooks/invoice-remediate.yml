@@ -1,0 +1,13 @@
+---
+# Intentional golden-path capability gap. The authoring demo replaces this
+# explicit failure with reviewed Ansible orchestration and regression coverage.
+- name: Require implementation of the approved remediation workflow
+  hosts: "{{ invoice_target_group | default('webapps') }}"
+  gather_facts: false
+  tasks:
+    - name: Explain the missing automation capability
+      ansible.builtin.fail:
+        msg: >-
+          Implement the Lightwell invoice remediation workflow for the linked
+          security ticket. Reuse demo.webapp.invoice_portal, preserve the
+          source and artifact checks, and add canary and recovery validation.

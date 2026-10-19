@@ -1,0 +1,155 @@
+---
+- name: Install the RHEL Python runtime
+  ansible.builtin.package:
+    name: [python3.12, python3.12-pip]
+    state: present
+
+- name: Require SELinux enforcing
+  ansible.builtin.command: getenforce
+  register: invoice_portal_selinux
+  changed_when: false
+  failed_when: invoice_portal_selinux.stdout | trim != 'Enforcing'
+
+- name: Create the application service account
+  ansible.builtin.user:
+    name: "{{ invoice_portal_user }}"
+    system: true
+    create_home: false
+    shell: /sbin/nologin
+
+- name: Create the immutable release directory
+  ansible.builtin.file:
+    path: "{{ invoice_portal_root }}/releases/{{ invoice_portal_release_id }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Copy application source from the reviewed collection
+  ansible.builtin.copy:
+    src: app/
+    dest: "{{ invoice_portal_root }}/releases/{{ invoice_portal_release_id }}/app/"
+    owner: root
+    group: root
+    mode: '0644'
+    directory_mode: '0755'
+
+- name: Copy only the authenticated wheel to the guest
+  ansible.builtin.copy:
+    src: "{{ invoice_portal_stage.path }}/{{ invoice_portal_artifact.filename }}"
+    dest: "{{ invoice_portal_root }}/releases/{{ invoice_portal_release_id }}/{{ invoice_portal_artifact.filename }}"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Install the dependency offline into the release environment
+  ansible.builtin.pip:
+    name: "{{ invoice_portal_root }}/releases/{{ invoice_portal_release_id }}/{{ invoice_portal_artifact.filename }}"
+    virtualenv: "{{ invoice_portal_root }}/releases/{{ invoice_portal_release_id }}/venv"
+    virtualenv_command: "{{ invoice_portal_python }} -m venv"
+    extra_args: --no-index --no-deps
+
+- name: Record release evidence
+  ansible.builtin.copy:
+    content: >-
+      {{ {'release_id': invoice_portal_release_id, 'channel': invoice_portal_artifact.channel,
+          'wheel_sha256': invoice_portal_artifact.sha256, 'source_revision': invoice_portal_source_revision,
+          'cves': ['CVE-2023-36464']} | to_nice_json }}
+    dest: "{{ invoice_portal_root }}/releases/{{ invoice_portal_release_id }}/app/release.json"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Install the hardened application service
+  ansible.builtin.template:
+    src: invoice-portal.service.j2
+    dest: /etc/systemd/system/invoice-portal.service
+    owner: root
+    group: root
+    mode: '0644'
+  register: invoice_portal_unit
+
+- name: Discover the current release
+  ansible.builtin.stat:
+    path: "{{ invoice_portal_root }}/current"
+  register: invoice_portal_current
+
+- name: Activate and verify the selected release
+  block:
+    - name: Select the application release
+      ansible.builtin.file:
+        src: "{{ invoice_portal_root }}/releases/{{ invoice_portal_release_id }}"
+        dest: "{{ invoice_portal_root }}/current"
+        state: link
+        force: true
+      register: invoice_portal_switch
+
+    - name: Start the invoice application
+      ansible.builtin.systemd_service:
+        name: invoice-portal
+        daemon_reload: "{{ invoice_portal_unit.changed }}"
+        enabled: true
+        state: "{{ 'restarted' if invoice_portal_switch.changed or invoice_portal_unit.changed else 'started' }}"
+
+    - name: Wait for the application health endpoint
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ invoice_portal_port }}/healthz"
+        status_code: 200
+      register: invoice_portal_health
+      until: invoice_portal_health.status | default(0) == 200
+      retries: 10
+      delay: 2
+
+    - name: Verify the exact deployed artifact and invoice behavior
+      ansible.builtin.command:
+        argv:
+          - "{{ invoice_portal_python }}"
+          - "{{ invoice_portal_root }}/current/app/probe.py"
+          - "http://127.0.0.1:{{ invoice_portal_port }}"
+          - --expect
+          - "{{ invoice_portal_expected }}"
+          - --expected-wheel-sha256
+          - "{{ invoice_portal_artifact.sha256 }}"
+      register: invoice_portal_verification
+      changed_when: false
+
+    - name: Publish verified release facts
+      ansible.builtin.set_fact:
+        invoice_portal_evidence: "{{ invoice_portal_verification.stdout | from_json }}"
+  rescue:
+    - name: Restore the previous release after failed validation
+      when: invoice_portal_current.stat.islnk | default(false)
+      ansible.builtin.file:
+        src: "{{ invoice_portal_current.stat.lnk_source }}"
+        dest: "{{ invoice_portal_root }}/current"
+        state: link
+        force: true
+
+    - name: Restart the restored release
+      when: invoice_portal_current.stat.islnk | default(false)
+      ansible.builtin.systemd_service:
+        name: invoice-portal
+        state: restarted
+        daemon_reload: true
+
+    - name: Stop a failed initial release when there is no previous release
+      when: not (invoice_portal_current.stat.islnk | default(false))
+      ansible.builtin.systemd_service:
+        name: invoice-portal
+        state: stopped
+
+    - name: Verify the previous release responds after restoration
+      when: invoice_portal_current.stat.islnk | default(false)
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ invoice_portal_port }}/healthz"
+        status_code: 200
+      register: invoice_portal_restored
+      until: invoice_portal_restored.status | default(0) == 200
+      retries: 10
+      delay: 2
+
+    - name: Report the unsuccessful deployment
+      ansible.builtin.fail:
+        msg: >-
+          Invoice release validation failed. A previous release was restored when available;
+          the incident remains unresolved. Inspect AAP job output before another deployment.
