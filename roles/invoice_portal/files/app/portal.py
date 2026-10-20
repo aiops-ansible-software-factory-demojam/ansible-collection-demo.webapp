@@ -76,7 +76,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/status":
             with LOCK:
                 jobs = list(JOBS)
-            return self.send(200, {"release": release(), "jobs": jobs, "timeout_seconds": DEADLINE})
+            return self.send(200, {"release": release(), "installed": {"package": "PyPDF2", "version": importlib.metadata.version("PyPDF2")}, "jobs": jobs, "timeout_seconds": DEADLINE})
         files = {"/": ("index.html", "text/html; charset=utf-8"), "/portal.js": ("portal.js", "text/javascript"), "/portal.css": ("portal.css", "text/css")}
         if self.path in files:
             name, kind = files[self.path]

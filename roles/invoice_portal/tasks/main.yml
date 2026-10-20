@@ -1,113 +1,45 @@
 ---
-- name: Validate the invoice release contract
-  ansible.builtin.assert:
-    that:
-      - invoice_portal_source_revision is match('^[0-9a-f]{40}$')
-      - invoice_portal_expected in ['vulnerable', 'remediated']
-      - invoice_portal_artifact.channel | default('') in ['baseline', 'lightwell']
-      - invoice_portal_artifact.sha256 | default('') is match('^[0-9a-f]{64}$')
-      - invoice_portal_artifact.filename | default('') is match('^[A-Za-z0-9_.+-]+[.]whl$')
-      - invoice_portal_artifact.version | default('') | length > 0
-      - invoice_portal_artifact.url | default('') is match('^https://')
-      - invoice_portal_root == '/opt/invoice-portal'
-      - invoice_portal_port | int == 80
-      - invoice_portal_expected != 'remediated' or invoice_portal_artifact.channel == 'lightwell'
-    fail_msg: Select an exact source commit and a complete approved artifact descriptor.
+- name: Resolve the invoice application source
+  ansible.builtin.set_fact:
+    invoice_portal_application_source: '{{ role_path }}/files/app/'
 
-- name: Require the recorded upstream baseline
-  when: invoice_portal_artifact.channel == 'baseline'
-  ansible.builtin.assert:
-    that:
-      - invoice_portal_artifact.version == '3.0.1'
-      - invoice_portal_artifact.sha256 == 'd16e4205cfee272fbdc0568b68d82be796540b1537508cef59388f839c191928'
-      - invoice_portal_artifact.url is match('^https://files[.]pythonhosted[.]org/')
+- name: Deploy the invoice application through the reusable Python release role
+  ansible.builtin.include_role:
+    name: python_application
+  vars:
+    python_application_root: '{{ invoice_portal_root }}'
+    python_application_service: invoice-portal
+    python_application_user: '{{ invoice_portal_user }}'
+    python_application_port: '{{ invoice_portal_port }}'
+    python_application_python: '{{ invoice_portal_python }}'
+    python_application_source: '{{ invoice_portal_application_source }}'
+    python_application_source_revision: '{{ invoice_portal_source_revision }}'
+    python_application_expected: '{{ invoice_portal_expected }}'
+    python_application_artifact: '{{ invoice_portal_artifact }}'
+    python_application_package: '{{ invoice_portal_package }}'
+    python_application_approved_sha256: '{{ invoice_portal_approved_artifact.sha256 }}'
+    python_application_approved_version: '{{ invoice_portal_approved_artifact.version }}'
+    python_application_compatible_wheels: ['{{ invoice_portal_approved_artifact.filename }}']
+    python_application_repository_username: '{{ invoice_portal_repository_username }}'
+    python_application_repository_token: '{{ invoice_portal_repository_token }}'
+    python_application_signing_key: '{{ invoice_portal_signing_key }}'
+    python_application_signing_key_sha256: '{{ invoice_portal_signing_key_sha256 }}'
+    python_application_command:
+      - '{{ invoice_portal_root }}/current/venv/bin/python'
+      - '{{ invoice_portal_root }}/current/app/portal.py'
+      - --port
+      - '{{ invoice_portal_port | string }}'
+    python_application_environment:
+      INVOICE_PROCESS_TIMEOUT: '2'
+    python_application_probe_argv:
+      - '{{ invoice_portal_python }}'
+      - '{{ invoice_portal_root }}/current/app/probe.py'
+      - 'http://127.0.0.1:{{ invoice_portal_port }}'
+      - --expect
+      - '{{ invoice_portal_expected }}'
+      - --expected-wheel-sha256
+      - '{{ invoice_portal_approved_artifact.sha256 }}'
 
-- name: Require Lightwell repository and signing identity
-  when: invoice_portal_artifact.channel == 'lightwell'
-  ansible.builtin.assert:
-    that:
-      - invoice_portal_artifact.url is match('^https://packages[.]redhat[.]com/')
-      - invoice_portal_artifact.provenance_url | default('') is match('^https://packages[.]redhat[.]com/')
-      - invoice_portal_signing_key | length > 0
-      - invoice_portal_signing_key_sha256 is match('^[0-9a-f]{64}$')
-    fail_msg: Lightwell releases require provenance and a separately pinned trusted signing key.
-
-- name: Allocate private controller staging
-  ansible.builtin.tempfile:
-    state: directory
-    prefix: invoice-artifact-
-  delegate_to: localhost
-  become: false
-  register: invoice_portal_stage
-  changed_when: false
-
-- name: Stage and authenticate the selected dependency
-  block:
-    - name: Download the exact wheel to the execution environment
-      ansible.builtin.get_url:
-        url: "{{ invoice_portal_artifact.url }}"
-        dest: "{{ invoice_portal_stage.path }}/{{ invoice_portal_artifact.filename }}"
-        checksum: "sha256:{{ invoice_portal_artifact.sha256 }}"
-        mode: '0600'
-        url_username: "{{ invoice_portal_repository_username | default(omit, true) }}"
-        url_password: "{{ invoice_portal_repository_token | default(omit, true) }}"
-        force_basic_auth: "{{ invoice_portal_artifact.channel == 'lightwell' }}"
-        unredirected_headers: [Authorization]
-        validate_certs: true
-      delegate_to: localhost
-      become: false
-      changed_when: false
-      no_log: true
-
-    - name: Fetch Lightwell wheel provenance
-      when: invoice_portal_artifact.channel == 'lightwell'
-      ansible.builtin.get_url:
-        url: "{{ invoice_portal_artifact.provenance_url }}"
-        dest: "{{ invoice_portal_stage.path }}/provenance.json"
-        mode: '0600'
-        url_username: "{{ invoice_portal_repository_username }}"
-        url_password: "{{ invoice_portal_repository_token }}"
-        force_basic_auth: true
-        unredirected_headers: [Authorization]
-        validate_certs: true
-      delegate_to: localhost
-      become: false
-      changed_when: false
-      no_log: true
-
-    - name: Write the public artifact contract
-      ansible.builtin.copy:
-        content: "{{ invoice_portal_artifact | to_nice_json }}"
-        dest: "{{ invoice_portal_stage.path }}/artifact.json"
-        mode: '0600'
-      delegate_to: localhost
-      become: false
-      changed_when: false
-
-    - name: Check wheel identity and cryptographic provenance
-      ansible.builtin.command:
-        argv:
-          - "{{ ansible_playbook_python }}"
-          - "{{ role_path }}/files/verify_artifact.py"
-          - "{{ invoice_portal_stage.path }}/artifact.json"
-          - "{{ invoice_portal_stage.path }}/{{ invoice_portal_artifact.filename }}"
-          - --provenance
-          - "{{ invoice_portal_stage.path }}/provenance.json"
-          - --key
-          - "{{ invoice_portal_signing_key | default('', true) }}"
-          - --key-sha256
-          - "{{ invoice_portal_signing_key_sha256 | default('', true) }}"
-      delegate_to: localhost
-      become: false
-      changed_when: false
-
-    - name: Install the authenticated application release
-      ansible.builtin.include_tasks: install.yml
-  always:
-    - name: Remove controller staging and downloaded metadata
-      ansible.builtin.file:
-        path: "{{ invoice_portal_stage.path }}"
-        state: absent
-      delegate_to: localhost
-      become: false
-      changed_when: false
+- name: Expose the invoice application release evidence
+  ansible.builtin.set_fact:
+    invoice_portal_evidence: '{{ python_application_evidence }}'

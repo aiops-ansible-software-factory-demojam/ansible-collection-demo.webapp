@@ -1,16 +1,18 @@
 [Unit]
-Description=Invoice processing application
+Description={{ python_application_service }}
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-User={{ invoice_portal_user }}
-Group={{ invoice_portal_user }}
-WorkingDirectory={{ invoice_portal_root }}/current/app
-ExecStart={{ invoice_portal_root }}/current/venv/bin/python {{ invoice_portal_root }}/current/app/portal.py --port {{ invoice_portal_port }}
+User={{ python_application_user }}
+Group={{ python_application_user }}
+WorkingDirectory={{ python_application_root }}/current/app
+ExecStart={{ python_application_command | map('quote') | join(' ') }}
 Environment=PYTHONDONTWRITEBYTECODE=1
-Environment=INVOICE_PROCESS_TIMEOUT=2
+{% for entry in python_application_environment.items() %}
+Environment="{{ entry[0] }}={{ entry[1] }}"
+{% endfor %}
 Restart=on-failure
 RestartSec=3
 NoNewPrivileges=true

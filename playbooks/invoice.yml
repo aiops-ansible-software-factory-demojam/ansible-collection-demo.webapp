@@ -1,13 +1,15 @@
 ---
 - name: Deploy the exact reviewed invoice application release
-  hosts: webapps
+  hosts: "{{ invoice_target_group | default('webapps') }}"
   become: true
   gather_facts: false
   vars:
     invoice_material: "{{ lookup('ansible.builtin.file', lookup('ansible.builtin.env', 'INVOICE_MATERIAL_FILE')) | from_json }}"
     invoice_release_channel: baseline
     invoice_portal_artifact: "{{ invoice_material[invoice_release_channel] }}"
-    invoice_portal_expected: "{{ 'remediated' if invoice_release_channel == 'lightwell' else 'vulnerable' }}"
+    invoice_portal_expected: >-
+      {{ 'remediated' if invoice_release_channel == 'lightwell'
+         else invoice_material.profile.validation.baseline_expectation | default('remediated') }}
     invoice_portal_repository_username: "{{ invoice_material.repository_username | default('') }}"
     invoice_portal_repository_token: "{{ invoice_material.repository_token | default('') }}"
     invoice_portal_signing_key: "{{ lookup('ansible.builtin.env', 'INVOICE_SIGNING_KEY_FILE') }}"
@@ -62,6 +64,12 @@
   tasks:
     - name: Publish application evidence to AAP
       ansible.builtin.set_stats:
+        aggregate: false
         data:
           invoice_release_evidence: "{{ invoice_portal_evidence }}"
           invoice_collection_sha: "{{ invoice_candidate_sha }}"
+
+    - name: Publish per-host deployment evidence
+      ansible.builtin.set_stats:
+        data:
+          invoice_hosts: '{{ {inventory_hostname: invoice_portal_evidence} }}'

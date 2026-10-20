@@ -86,12 +86,30 @@ symlinks are needed; shared `config.yml` supplies Molecule's role search path.
 - `devfile.yaml` defines development commands for editors that support Devfiles.
 # Invoice processing scenario
 
-`roles/invoice_portal` contains the PDF application and common authenticated
-release tasks. `playbooks/invoice.yml` installs the known vulnerable baseline.
-`playbooks/invoice-remediate.yml` is an explicit authoring stub: the demo agent
-implements the operational Lightwell workflow and its recovery tests there.
-The `invoice_portal` Molecule scenario executes that authored playbook against
-disposable RHEL EC2 guests. See the GitOps repository's
+`roles/python_application` verifies and deploys an independently approved
+self-contained Python wheel without hardcoded package names, CVEs or baseline
+hashes. `roles/invoice_portal` supplies the invoice source, service settings and
+business probe. `playbooks/invoice.yml` installs the selected baseline.
+
+`playbooks/invoice-remediate.yml` is a reusable deployment golden path. Each
+incident changes `releases/invoice.json`, locking the approved package version
+and digest, and adds meaningful regression tests as needed. The seed manifest
+selects the baseline and deliberately cannot pass remediation until changed to
+the approved Lightwell selection; the deployment workflow itself is complete.
+No dependency is resolved as "latest" during production deployment.
+
+`demo.webapp.lightwell_plan` assesses observed package versions against trusted
+application/advisory profiles, discovers compatible catalog artifacts and checks
+release locks. Availability/signatures are distinct from advisory evidence.
+The same policy and verifier are tested with PyPDF2 and sqlparse profiles.
+The initial adapter supports one self-contained wheel; required transitive
+dependencies fail closed until a fully locked deployment adapter is supplied.
+
+The `invoice_portal` Molecule scenario runs the candidate's tests. A separate
+mandatory RHEL 9/10 EC2 acceptance suite lives in `demojam-ansible`, beyond the
+agent's write permissions. It checks real wheel bytes and installed metadata,
+independently supplied documents, source identity, SELinux, idempotence and a
+failed-canary rollout. See the GitOps repository's
 [complete walkthrough](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/blob/feature/lightwell-invoice-demo/docs/invoice-lightwell-demo.md).
 
 Select the invoice lifecycle explicitly, with the mounted artifact material
@@ -116,3 +134,8 @@ With Ansible installed, run
 `python -m unittest discover -s tests -p test_invoice_source_revision.py -v`
 to exercise the source guard in an AAP-like execution copy without `.git` and
 in a direct Git checkout. Missing or mismatched revisions must fail.
+
+Run `python -m unittest discover -s tests -v` with `ansible-playbook` on PATH
+for application, source guard, package identity, catalog and remediation-policy
+checks. Policy tests use explicitly synthetic advisory fixtures; they do not
+claim real sqlparse CVE remediation or a second deployed application.
