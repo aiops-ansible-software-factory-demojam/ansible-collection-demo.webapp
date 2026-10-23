@@ -1,0 +1,18 @@
+---
+- name: Require the exact approved web deployment context and source
+  ansible.builtin.assert:
+    that:
+      - awx_job_id | default(0) | int > 0
+      - awx_workflow_job_id | default(0) | int > 0
+      - awx_workflow_job_name | default('') == 'webapp_promote'
+      - webapp_candidate_sha is match('^[0-9a-f]{40}$')
+      - awx_project_revision | default('') == webapp_candidate_sha
+      - webapp_release_contract.schema_version == 1
+      - webapp_release_contract.repository == 'demo-owner/ansible-collection-demo.webapp'
+      - webapp_release_contract.source_revision == webapp_candidate_sha
+      - webapp_release_contract.issue_number | int == webapp_issue_number | int
+      - webapp_release_contract.pr_number | int == webapp_pr_number | int
+      - ansible_play_hosts_all | sort == webapp_release_contract.hosts | sort
+      - ansible_play_hosts_all | difference(groups['webapps']) | length == 0
+      - ansible_play_hosts_all | intersect(groups['pythonapps'] | default([])) | length == 0
+    fail_msg: Production nginx deployment requires the native approval workflow and its exact reviewed web-only source.

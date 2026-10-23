@@ -1,0 +1,18 @@
+---
+- name: Deploy the approved nginx incident fix and verify enforcing recovery
+  hosts: webapps
+  become: true
+  gather_facts: false
+  any_errors_fatal: true
+  vars_files:
+    - ../vars/webapp.yml
+  tasks:
+    - name: Check the native approval contract before guest access
+      ansible.builtin.import_tasks: tasks/validate-promotion.yml
+    - name: Deploy the reviewed local nginx role from this exact checkout
+      ansible.builtin.import_role:
+        name: nginx
+    - name: Finish all nginx configuration handlers before recovery checks
+      ansible.builtin.meta: flush_handlers
+    - name: Verify actual enforcing application recovery
+      ansible.builtin.import_tasks: tasks/verify-promotion.yml
