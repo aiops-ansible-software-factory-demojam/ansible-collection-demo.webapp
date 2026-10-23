@@ -1,0 +1,4 @@
+---
+# AAP installs production dependencies from this file for the pinned checkout.
+# Keep any added collection requirements consistent with galaxy.yml.
+collections: []
