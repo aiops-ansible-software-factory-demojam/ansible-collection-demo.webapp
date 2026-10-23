@@ -1,4 +1,5 @@
 ---
-- name: Example | Show a friendly message
+- name: Show the example message
   ansible.builtin.debug:
     msg: "{{ example_message }}"
+    verbosity: 1

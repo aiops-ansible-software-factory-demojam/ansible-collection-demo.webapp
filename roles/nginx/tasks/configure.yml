@@ -1,19 +1,27 @@
 ---
-- name: Create custom docroot
+- name: configure | Create the document root
   ansible.builtin.file:
     path: "{{ nginx_docroot }}"
     state: directory
-    mode: "0755"
+    owner: root
+    group: root
+    mode: '0755'
 
-- name: Drop demo index.html in custom docroot
+- name: configure | Install the configured index page
+  when: nginx_index_content | length > 0
   ansible.builtin.copy:
     dest: "{{ nginx_docroot }}/index.html"
-    content: "<h1>demojam demo</h1>\n"
-    mode: "0644"
+    content: "{{ nginx_index_content }}"
+    owner: root
+    group: root
+    mode: '0644'
 
-# 3. Point nginx at the custom docroot
-- name: Point nginx.conf root at custom docroot
-  ansible.builtin.replace:
-    path: /etc/nginx/nginx.conf
-    regexp: '^(\s*)root\s+.*;'
-    replace: '\1root {{ nginx_docroot }};'
+- name: configure | Install and validate the nginx configuration
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: '0644'
+    validate: /usr/sbin/nginx -t -c %s
+  notify: Reload nginx

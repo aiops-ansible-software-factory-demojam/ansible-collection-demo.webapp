@@ -6,6 +6,8 @@
   hosts: molecule
   become: true
   gather_facts: false
+  vars_files:
+    - ../../../vars/webapp.yml
   tasks:
     - name: Read the guest SELinux mode
       ansible.builtin.command: getenforce
@@ -21,10 +23,15 @@
       ansible.builtin.uri:
         url: http://127.0.0.1/
         status_code: 200
+        return_content: true
       register: nginx_http
       until: nginx_http.status == 200
       retries: 6
       delay: 2
+
+    - name: Require the configured application page
+      ansible.builtin.assert:
+        that: nginx_index_content in nginx_http.content
 
     - name: Read nginx process users
       ansible.builtin.command:

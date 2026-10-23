@@ -1,0 +1,10 @@
+---
+breaking_changes:
+  - >-
+    The nginx role defaults to the package document root and leaves index content
+    alone. Use playbooks/deploy_webapp.yml to load the demo settings from vars/webapp.yml.
+minor_changes:
+  - Validate templated nginx configuration before replacement and reload only on changes.
+  - Make configuration and service tasks safe after simulated package installation in fresh-host check mode.
+  - Validate and document the complete nginx role input contract.
+  - Use the same collection deployment playbook in production and Molecule, and verify the configured page content.

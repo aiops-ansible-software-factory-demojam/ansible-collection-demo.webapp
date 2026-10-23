@@ -1,3 +1,5 @@
 ---
 nginx_service_enabled: true
-nginx_docroot: /web
+nginx_docroot: /usr/share/nginx/html
+nginx_index_content: ''
+nginx_listen_port: 80

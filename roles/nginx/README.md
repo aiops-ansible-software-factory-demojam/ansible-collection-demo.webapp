@@ -1,15 +1,22 @@
 # demo.webapp.nginx
 
-Installs the distribution nginx package and enables/starts its service. The baseline
-uses the package's configuration and nginx worker account; runtime UID is not yet
-configurable. Scaffolded with `ansible-creator add resource role nginx`.
+Installs the Enterprise Linux nginx package, owns `/etc/nginx/nginx.conf`, and
+starts the service using the package's nginx worker account. Configuration is
+rendered from a template, checked with `nginx -t` before replacement, and reloaded
+through a handler only when it changes. This role does not manage SELinux mode
+or add labels, firewall rules, or TLS certificates.
 
-Requirements: Enterprise Linux 9/10 and CentOS Stream 10, ansible-core >=2.16, package repository access,
-a service manager, and root privileges. No firewall or TLS configuration is included.
+Requires Enterprise Linux 9/10, ansible-core >=2.16, package repository access,
+a service manager, and root privileges. The template replaces the main nginx
+configuration; existing files under `/etc/nginx/conf.d/` remain included and must
+be compatible with the managed server.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `nginx_service_enabled` | `true` | Enable the service at boot; it is always started. |
+| `nginx_service_enabled` | `true` | Enable at boot; the service is always started. |
+| `nginx_docroot` | `/usr/share/nginx/html` | Absolute document root without traversal components. |
+| `nginx_index_content` | `''` | Optional index page; empty leaves existing content alone. |
+| `nginx_listen_port` | `80` | HTTP port, from 1 through 65535. |
 
 ```yaml
 ---
@@ -20,6 +27,12 @@ a service manager, and root privileges. No firewall or TLS configuration is incl
     - role: demo.webapp.nginx
 ```
 
-Repeated convergence is idempotent. Check mode works for an existing installation;
-on a fresh host the service task may fail because package installation is simulated.
-Rollback/uninstall is outside this role's scope. License: MIT. Author: Demo Maintainer.
+Keep application settings in a vars file. The demo's page and `/web` path live
+in `vars/webapp.yml`, loaded by `playbooks/deploy_webapp.yml`; they are not generic
+role defaults or inventory settings. The baseline deliberately leaves `/web`
+without a persistent SELinux policy so the incident can demonstrate remediation.
+
+Repeated convergence is idempotent. On a fresh host, check mode predicts package
+installation and skips configuration and service operations that need that package.
+On an existing installation it predicts configuration changes without activating
+them. Rollback/uninstall is outside this role's scope. License: MIT.

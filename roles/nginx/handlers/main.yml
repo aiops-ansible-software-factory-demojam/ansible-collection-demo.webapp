@@ -1,2 +1,5 @@
 ---
-# No handlers are needed: this baseline uses the distribution configuration.
+- name: Reload nginx
+  ansible.builtin.service:
+    name: nginx
+    state: reloaded

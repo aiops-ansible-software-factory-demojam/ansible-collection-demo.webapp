@@ -1,13 +1,24 @@
 ---
 argument_specs:
   main:
-    short_description: Install and start nginx
+    short_description: Configure and run a distribution nginx service
     description:
-      - Install the distribution nginx package and start its service.
+      - Own nginx.conf, validate changes and reload the service when needed.
       - Use the package-provided nginx worker account and UID.
     options:
       nginx_service_enabled:
         type: bool
         default: true
-        description:
-          - Enable nginx at boot.
+        description: Enable nginx at boot; the service is always started.
+      nginx_docroot:
+        type: path
+        default: /usr/share/nginx/html
+        description: Absolute path to the document root without traversal components.
+      nginx_index_content:
+        type: str
+        default: ''
+        description: Optional index.html content; an empty value leaves existing content alone.
+      nginx_listen_port:
+        type: int
+        default: 80
+        description: TCP port for the managed HTTP server.
