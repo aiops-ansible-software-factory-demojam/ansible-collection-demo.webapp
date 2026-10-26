@@ -31,7 +31,7 @@
     data:
       webapp_release_contract: '{{ webapp_release_contract }}'
       webapp_deployment_evidence:
-        source_revision: '{{ awx_project_revision }}'
+        source_revision: '{{ webapp_execution_revision }}'
         selinux: enforcing
         http_status: '{{ webapp_promotion_http.status }}'
         content_sha256: '{{ webapp_promotion_http.content | hash("sha256") }}'
@@ -41,5 +41,5 @@
   ansible.builtin.set_stats:
     data:
       webapp_deployment_hosts: >-
-        {{ {inventory_hostname: {'source_revision': awx_project_revision, 'passed': true,
+        {{ {inventory_hostname: {'source_revision': webapp_execution_revision, 'passed': true,
         'selinux': 'enforcing', 'http_status': webapp_promotion_http.status}} }}

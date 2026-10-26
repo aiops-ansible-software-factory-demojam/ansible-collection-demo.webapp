@@ -11,3 +11,16 @@ Run `make molecule` from the collection root in the existing Omnigent sandbox. S
 Shared Molecule settings live in `extensions/molecule/config.yml` and `extensions/molecule/utils/`; the pinned requirements are `extensions/molecule/requirements-test.yml`. Scenarios contain only molecule.yml, converge.yml and verify.yml. Verify HTTP and the actual nginx worker identity, with SELinux enforcing. Preserve the fault until the issue requests remediation; never change production yourself.
 
 Push an issue feature branch and open a PR against main. Do not merge or push directly to main.
+
+Every incident fix must add or extend `extensions/molecule/nginx/tasks/regression.yml`
+and include those tasks from `verify.yml`. Existing HTTP/enforcing assertions
+alone do not satisfy new regression coverage. Use explicit
+`ansible.builtin.assert` verdicts after non-fatal observations. The independent
+operator executes the identical tasks against the incident merge base (an
+assertion must fail on each guest) and the published fix (all must pass), then
+checks persistent SELinux policy by relabeling and verifying enforcing HTTP
+recovery. Never publish the operator's `webapp/regression-validation` status.
+
+Production source guards use the Controller-protected full SHA in
+`awx_job_scm_branch` for overridden jobs. `awx_project_revision` describes the
+default project revision and may have advanced to a later merge commit.

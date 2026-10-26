@@ -1,4 +1,7 @@
 ---
+- name: Select the Controller pinned job source rather than the default project revision
+  ansible.builtin.set_fact:
+    webapp_execution_revision: '{{ awx_job_scm_branch | default(awx_project_revision | default("")) }}'
 - name: Require the exact approved web deployment context and source
   ansible.builtin.assert:
     that:
@@ -6,7 +9,7 @@
       - awx_workflow_job_id | default(0) | int > 0
       - awx_workflow_job_name | default('') == 'webapp_promote'
       - webapp_candidate_sha is match('^[0-9a-f]{40}$')
-      - awx_project_revision | default('') == webapp_candidate_sha
+      - webapp_execution_revision == webapp_candidate_sha
       - webapp_release_contract.schema_version == 1
       - webapp_release_contract.repository == 'demo-owner/ansible-collection-demo.webapp'
       - webapp_release_contract.source_revision == webapp_candidate_sha

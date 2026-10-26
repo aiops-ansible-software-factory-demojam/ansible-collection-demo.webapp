@@ -23,6 +23,14 @@ class WebappPromotionTests(unittest.TestCase):
             self.assertEqual(r.returncode == 0, passes, r.stdout + r.stderr)
     def test_exact_native_web_source_and_scope_pass(self):
         self.run_tasks(self.v, yaml.safe_load((ROOT/'playbooks/tasks/validate-promotion.yml').read_text()))
+    def test_pinned_job_with_later_default_merge_revision_passes(self):
+        v = dict(self.v, awx_project_revision='b' * 40, awx_job_scm_branch='a' * 40)
+        self.run_tasks(v, yaml.safe_load((ROOT/'playbooks/tasks/validate-promotion.yml').read_text()))
+    def test_matching_default_revision_cannot_hide_wrong_or_mutable_job_override(self):
+        for branch in ['main', 'feature/issue-1', 'b' * 40, '']:
+            with self.subTest(branch=branch):
+                self.run_tasks(dict(self.v, awx_job_scm_branch=branch),
+                    yaml.safe_load((ROOT/'playbooks/tasks/validate-promotion.yml').read_text()), False)
     def test_direct_launch_wrong_source_incident_or_hosts_fail_before_guest_access(self):
         tasks = yaml.safe_load((ROOT/'playbooks/tasks/validate-promotion.yml').read_text())
         for field in ['workflow','source','incident','hosts','repository']:
