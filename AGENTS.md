@@ -24,3 +24,12 @@ recovery. Never publish the operator's `webapp/regression-validation` status.
 Production source guards use the Controller-protected full SHA in
 `awx_job_scm_branch` for overridden jobs. `awx_project_revision` describes the
 default project revision and may have advanced to a later merge commit.
+
+PR submission is not completion. After the final edit, rerun lint, build and all
+Molecule tests, then commit and publish the same incident branch and PR. Run
+`demo-goldenpath --repository demo-owner/ansible-collection-demo.webapp ci <issue> --wait` until independent CI
+passes for that exact head. Exit 75 means pending: keep waiting without editing
+the published tree. On failure, read trusted CI diagnostics on the PR, fix the
+cause on the same branch, rerun local checks, push a new commit and wait again.
+Never publish your own CI status, weaken checks or claim completion while CI
+is pending or failed. A passing verdict permits human review, not deployment.
