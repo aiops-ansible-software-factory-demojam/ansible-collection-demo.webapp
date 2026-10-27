@@ -19,3 +19,14 @@ in mind: gather required facts in the reusable role rather than only in the test
 setup. Run lint, unit tests, a collection build and every Molecule scenario after
 the final edit, and report each actual exit code. Do not hide a failing command
 behind a pipeline's successful tail or head command.
+
+Molecule provisioning commands (`test`, `converge`, `create`, `check`) deliberately
+destroy the scenario's owned test guests before creating replacements. Preserve
+these lifecycle sequences. After any code change, rerun the complete test lifecycle
+on fresh RHEL 9/10 guests before reporting success; an earlier converge or a run
+with skipped creation does not validate the final code. Keep the saved ownership
+records so cleanup can remove partial resources; never delete state to force a
+new run. Set the shell tool timeout to at least 1800000 ms (30 minutes) for a full EC2
+lifecycle; do not add a shorter shell `timeout` around Molecule. A timeout or
+incomplete output is not a pass. Run tests without output-filtering pipelines,
+or enable `set -o pipefail` and preserve the actual Molecule exit status.
