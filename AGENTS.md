@@ -6,6 +6,15 @@ Keep demo page content and document-root settings in `vars/webapp.yml`; use `pla
 
 Use fully qualified Ansible module names and keep roles idempotent. Defaults belong in `roles/<role>/defaults/main.yml` with the role prefix. Keep credentials outside the repository.
 
+Diagnose the failed Molecule phase before editing. Convergence can succeed while
+idempotence fails because the second convergence reports changes. Inspect the
+changed task in that phase; successful provisioning or destruction recap counts
+do not identify the failing task. Preserve working remediation while fixing its
+idempotence. For a custom document root, restorecon applies the existing policy;
+it does not create a persistent file-context rule. Removing that rule can restore
+HTTP 403 even when restorecon itself succeeds. Keep enforcing HTTP, regression,
+and durable relabel checks intact; do not remove test imports to silence a failure.
+
 Run `make molecule` from the collection root in the existing Omnigent sandbox. Source `/etc/profile.d/molecule.sh`; use its backend, pinned provisioner, network and scoped credentials. AWS tests must finish creation, convergence, idempotence, verification and destruction on both RHEL 9 and RHEL 10. After interruption, run `make destroy` in the same sandbox to recover the saved ownership record. Do not replace the sandbox's normal collection paths or credentials.
 
 Shared Molecule settings live in `extensions/molecule/config.yml` and `extensions/molecule/utils/`; the pinned requirements are `extensions/molecule/requirements-test.yml`. Scenarios contain only molecule.yml, converge.yml and verify.yml. Verify HTTP and the actual nginx worker identity, with SELinux enforcing. Preserve the fault until the issue requests remediation; never change production yourself.
