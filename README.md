@@ -30,18 +30,3 @@ baseline. Code-quality checks must not be reported as a successful SELinux fix.
 The playbook uses `deploy_webapp.yml` so consumers can resolve the valid collection-qualified import `demo.webapp.deploy_webapp`.
 
 Local input and fresh-host check-mode regressions run with `python -m unittest discover -s tests -v` in an environment with Ansible and PyYAML.
-
-Production recovery runs `playbooks/promote_webapp.yml` from the exact reviewed
-SCM commit through the native AAP `webapp_promote` approval workflow. This entry
-point checks its source, incident contract and full webapps scope before guest
-access, then calls the local nginx role from that checkout with `vars/webapp.yml`.
-After handlers finish, it verifies SELinux enforcing and the configured HTTP page,
-and publishes per-host recovery evidence. It never switches SELinux to permissive.
-
-The existing `deploy_webapp.yml` remains the baseline/setup and Molecule entry
-point. Both use the same application vars and nginx role. Keep production collection
-dependencies in `collections/requirements.yml` with versions matching `galaxy.yml`;
-AAP project sync consumes that requirements file for the pinned source checkout.
-Operator testing of the published PR, human merge and separate production approval
-remain required. The deliberately unfixed baseline is not a successful enforcing
-recovery merely because the new orchestration checks pass.

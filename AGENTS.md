@@ -6,46 +6,27 @@ Keep demo page content and document-root settings in `vars/webapp.yml`; use `pla
 
 Use fully qualified Ansible module names and keep roles idempotent. Defaults belong in `roles/<role>/defaults/main.yml` with the role prefix. Keep credentials outside the repository.
 
-Diagnose the failed Molecule phase before editing. Convergence can succeed while
-idempotence fails because the second convergence reports changes. Inspect the
-changed task in that phase; successful provisioning or destruction recap counts
-do not identify the failing task. Preserve working remediation while fixing its
-idempotence. For a custom document root, restorecon applies the existing policy;
-it does not create a persistent file-context rule. Removing that rule can restore
-HTTP 403 even when restorecon itself succeeds. Keep enforcing HTTP, regression,
-and durable relabel checks intact; do not remove test imports to silence a failure.
-
 Run `make molecule` from the collection root in the existing Omnigent sandbox. Source `/etc/profile.d/molecule.sh`; use its backend, pinned provisioner, network and scoped credentials. AWS tests must finish creation, convergence, idempotence, verification and destruction on both RHEL 9 and RHEL 10. After interruption, run `make destroy` in the same sandbox to recover the saved ownership record. Do not replace the sandbox's normal collection paths or credentials.
 
 Shared Molecule settings live in `extensions/molecule/config.yml` and `extensions/molecule/utils/`; the pinned requirements are `extensions/molecule/requirements-test.yml`. Scenarios contain only molecule.yml, converge.yml and verify.yml. Verify HTTP and the actual nginx worker identity, with SELinux enforcing. Preserve the fault until the issue requests remediation; never change production yourself.
 
 Push an issue feature branch and open a PR against main. Do not merge or push directly to main.
 
-Every incident fix must add or extend `extensions/molecule/nginx/tasks/regression.yml`
-and include those tasks from `verify.yml`. Existing HTTP/enforcing assertions
-alone do not satisfy new regression coverage. Use explicit
-`ansible.builtin.assert` verdicts after non-fatal observations. The independent
-operator executes the identical tasks against the incident merge base (an
-assertion must fail on each guest) and the published fix (all must pass), then
-checks persistent SELinux policy by relabeling and verifying enforcing HTTP
-recovery. Never publish the operator's `webapp/regression-validation` status.
+Every incident fix must add meaningful Molecule regression assertions for its
+specific failure. Renaming an existing HTTP check or adding diagnostic output
+does not add regression coverage. Keep the production playbook's fact requirements
+in mind: gather required facts in the reusable role rather than only in the test
+setup. Run lint, unit tests, a collection build and every Molecule scenario after
+the final edit, and report each actual exit code. Do not hide a failing command
+behind a pipeline's successful tail or head command.
 
-Production source guards use the Controller-protected full SHA in
-`awx_job_scm_branch` for overridden jobs. `awx_project_revision` describes the
-default project revision and may have advanced to a later merge commit.
-
-PR submission is not completion. After the final edit, rerun lint, build and all
-Molecule tests, then commit and publish the same incident branch and PR. Run
-`demo-goldenpath --repository demo-owner/ansible-collection-demo.webapp ci <issue> --wait` until independent CI
-passes for that exact head. Exit 75 means pending: keep waiting without editing
-the published tree. On failure, read trusted CI diagnostics on the PR, fix the
-cause on the same branch, rerun local checks, push a new commit and wait again.
-Never publish your own CI status, weaken checks or claim completion while CI
-is pending or failed. A passing verdict permits human review, not deployment.
-
-Use only the `ci --wait` helper for CI status. Each call waits at most 45 seconds.
-Check the exit code after every call: failure requires repair; pending requires
-another bounded wait. Do not replace it with shell polling loops, long sleeps or
-direct Forgejo status polling. Publish later commits with the same `pr` helper
-on the existing PR. Required tests must execute successfully; skipped tests,
-expected failures and removed coverage do not satisfy CI.
+Molecule provisioning commands (`test`, `converge`, `create`, `check`) deliberately
+destroy the scenario's owned test guests before creating replacements. Preserve
+these lifecycle sequences. After any code change, rerun the complete test lifecycle
+on fresh RHEL 9/10 guests before reporting success; an earlier converge or a run
+with skipped creation does not validate the final code. Keep the saved ownership
+records so cleanup can remove partial resources; never delete state to force a
+new run. Set the shell tool timeout to at least 1800000 ms (30 minutes) for a full EC2
+lifecycle; do not add a shorter shell `timeout` around Molecule. A timeout or
+incomplete output is not a pass. Run tests without output-filtering pipelines,
+or enable `set -o pipefail` and preserve the actual Molecule exit status.
