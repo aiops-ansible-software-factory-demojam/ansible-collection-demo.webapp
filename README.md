@@ -30,3 +30,23 @@ baseline. Code-quality checks must not be reported as a successful SELinux fix.
 The playbook uses `deploy_webapp.yml` so consumers can resolve the valid collection-qualified import `demo.webapp.deploy_webapp`.
 
 Local input and fresh-host check-mode regressions run with `python -m unittest discover -s tests -v` in an environment with Ansible and PyYAML.
+
+## Current validation and packaging
+
+The 2026-10-28 dual-application AWS rehearsal completed the real nginx incident
+and recovery. An independently tested Forgejo candidate added the SELinux fix
+and regression assertions; it passed build/install, production lint, all five
+unit tests and fresh RHEL 9/10 convergence, idempotence, verification and cleanup.
+The operator merged that exact candidate and deployed once through `webapp_nginx`.
+HTTP 200, SELinux Enforcing and normal alert resolution proved recovery. These
+incident changes are not baked into the deliberately vulnerable source baseline.
+
+Generated `collections/ansible_collections/` installations are ignored by Git and
+excluded from built artifacts; standard `collections/requirements.yml` stays valid.
+A real packaging test guards against cache files and external links entering the
+release. Export a published SHA into temporary source and install into a separate
+root for independent tests. Every separate provisioning command cleans owned
+guests first; retain ownership records after interruptions.
+
+See the [current state](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/blob/fix/portable-collection-artifacts/docs/stable-demo-rehearsal.md)
+and [architecture/workflow XML](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/tree/fix/portable-collection-artifacts/docs/diagrams).
