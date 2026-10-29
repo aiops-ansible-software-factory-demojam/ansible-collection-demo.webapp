@@ -1,0 +1,3 @@
+---
+bugfixes:
+  - Preserve the Reload nginx notification topic when handler display names include a file prefix.

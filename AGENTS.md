@@ -6,6 +6,9 @@ Keep demo page content and document-root settings in the `vars` block of `playbo
 
 Use fully qualified Ansible module names and keep roles idempotent. Defaults belong in `roles/<role>/defaults/main.yml` with the role prefix. Keep credentials outside the repository.
 
+Task-name prefixes apply to task and handler display names, not data identifiers.
+Preserve notification topics with `listen` when renaming handlers.
+
 Run `env MOLECULE_GLOB='extensions/molecule/*/molecule.yml' molecule test --all` from the collection root in the existing Omnigent sandbox. Source `/etc/profile.d/molecule.sh`; use its backend, pinned provisioner, network and scoped credentials. AWS tests must finish creation, convergence, idempotence, verification and destruction on both RHEL 9 and RHEL 10. After interruption, run `env MOLECULE_GLOB='extensions/molecule/*/molecule.yml' molecule destroy --all` in the same sandbox to recover the saved ownership record. Do not replace the sandbox's normal collection paths or credentials.
 
 Shared Molecule settings live in `extensions/molecule/config.yml` and `extensions/molecule/utils/`; the pinned requirements are `extensions/molecule/requirements-test.yml`. Scenarios contain only molecule.yml, converge.yml and verify.yml. Verify HTTP and the actual nginx worker identity, with SELinux enforcing. Preserve the fault until the issue requests remediation; never change production yourself.
