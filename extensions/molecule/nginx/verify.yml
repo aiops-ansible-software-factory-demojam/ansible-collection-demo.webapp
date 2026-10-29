@@ -7,9 +7,8 @@
   become: true
   gather_facts: false
   vars:
-    nginx_demo_settings: >-
-      {{ (lookup('ansible.builtin.file', playbook_dir ~ '/../../../playbooks/deploy_webapp.yml')
-      | from_yaml | first).vars }}
+    nginx_docroot: /web
+    nginx_index_content: "<h1>demojam demo</h1>\n"
   tasks:
     - name: Read the guest SELinux mode
       ansible.builtin.command: getenforce
@@ -33,7 +32,7 @@
 
     - name: Require the configured application page
       ansible.builtin.assert:
-        that: nginx_demo_settings.nginx_index_content in nginx_http.content
+        that: nginx_index_content in nginx_http.content
 
     - name: Read nginx process users
       ansible.builtin.command:
