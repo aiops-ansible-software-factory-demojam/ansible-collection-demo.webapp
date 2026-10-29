@@ -1,5 +1,6 @@
 ---
 - name: main | Reload nginx
+  listen: Reload nginx
   ansible.builtin.service:
     name: nginx
     state: reloaded

@@ -3,8 +3,10 @@
   hosts: "{{ webapp_target_group | default('webapps') }}"
   become: true
   gather_facts: false
-  vars_files:
-    - ../vars/webapp.yml
+  vars:
+    # /web intentionally lacks persistent SELinux policy in the demo baseline.
+    nginx_docroot: /web
+    nginx_index_content: "<h1>demojam demo</h1>\n"
   roles:
     - role: demo.webapp.nginx
   post_tasks:

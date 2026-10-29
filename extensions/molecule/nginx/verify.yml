@@ -6,8 +6,9 @@
   hosts: molecule
   become: true
   gather_facts: false
-  vars_files:
-    - ../../../vars/webapp.yml
+  vars:
+    nginx_docroot: /web
+    nginx_index_content: "<h1>demojam demo</h1>\n"
   tasks:
     - name: verify | Read the guest SELinux mode
       ansible.builtin.command: getenforce

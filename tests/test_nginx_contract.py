@@ -47,11 +47,33 @@ class NginxContractTests(unittest.TestCase):
             with self.subTest(port=port):
                 self.assertNotEqual(self.run_guard(nginx_listen_port=port).returncode, 0)
 
+    def test_configuration_notifications_run_the_reload_handler(self):
+        configuration = yaml.safe_load((ROOT / 'roles/nginx/tasks/configure.yml').read_text())
+        handlers = yaml.safe_load((ROOT / 'roles/nginx/handlers/main.yml').read_text())
+        # Exercise Ansible's real notification lookup without installing nginx
+        # or touching the review host's service manager.
+        safe_handlers = [{key: value for key, value in handler.items()
+                          if key in ('name', 'listen')} for handler in handlers]
+        for handler in safe_handlers:
+            handler['ansible.builtin.debug'] = {'msg': 'NGINX_RELOAD_HANDLER_RAN'}
+        tasks = [{'name': task['name'], 'ansible.builtin.debug': {'msg': 'Configuration changed'},
+                  'changed_when': True, 'notify': task['notify']}
+                 for task in configuration if 'notify' in task]
+        self.assertTrue(tasks)
+        with tempfile.TemporaryDirectory(prefix='nginx-handler-') as directory:
+            path = Path(directory) / 'check.yml'
+            path.write_text(yaml.safe_dump([{'name': 'Exercise nginx notifications', 'hosts': 'localhost',
+                'connection': 'local', 'gather_facts': False, 'tasks': tasks, 'handlers': safe_handlers}]))
+            result = subprocess.run(['ansible-playbook', '-i', 'localhost,', str(path)],
+                                    capture_output=True, text=True, timeout=60)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('NGINX_RELOAD_HANDLER_RAN', result.stdout)
+
     @unittest.skipIf(Path('/etc/nginx/nginx.conf').exists(), 'Requires a host without nginx configuration')
     def test_fresh_host_configuration_phase_is_safe_in_check_mode(self):
         # Start after package management to reproduce the state left by a
         # simulated installation without depending on the operator OS repositories.
-        result = self.run_play({}, start_at='Inspect the installed nginx configuration', check=True)
+        result = self.run_play({}, start_at='main | Inspect the installed nginx configuration', check=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertFalse(Path('/etc/nginx/nginx.conf').exists())
         self.assertIn('changed=0', result.stdout)

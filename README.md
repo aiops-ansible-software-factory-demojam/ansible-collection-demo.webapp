@@ -9,7 +9,7 @@ The web application runs on the RHEL host in inventory group `webapps`. Its demo
 | Path | Purpose |
 | --- | --- |
 | `roles/nginx` | Reusable Enterprise Linux nginx install, config template, and service management |
-| `vars/webapp.yml` | Demo page and document root; loaded by `playbooks/deploy_webapp.yml` |
+| `playbooks/deploy_webapp.yml` → `vars` | Demo page and document root |
 | `playbooks/deploy_webapp.yml` | Production and Molecule deployment entry point |
 | `collections/requirements.yml` | Pinned deps for Molecule utility playbooks (`david_igou.molecule_provisioners`) |
 | `meta/runtime.yml` | Minimum ansible-core version (`requires_ansible`) for Galaxy and Automation Hub metadata |
@@ -22,15 +22,16 @@ source /etc/profile.d/molecule.sh
 ansible-lint --profile production
 # Or: ansible-lint roles/nginx extensions/molecule/nginx
 ansible-galaxy collection build --output-path /tmp
-make molecule
-make destroy  # Recover after interruption
+export MOLECULE_GLOB='extensions/molecule/*/molecule.yml'
+molecule test --all
+molecule destroy --all  # Recover after interruption
 ```
 
 Source `/etc/profile.d/molecule.sh` and retain its backend, network, credentials and preloaded dependencies. AWS scenarios use the pinned RHEL 9 and RHEL 10 images; both must finish the full lifecycle, including idempotence, HTTP/worker-identity checks, enforcing SELinux and cleanup. CNV uses the CentOS Stream 10 CDI inventory (RHEL 10 KubeVirt guests remain deferred in that inventory). Shared lifecycle configuration is under `extensions/molecule/`; the provisioner pin lives in `extensions/molecule/requirements-test.yml` and `collections/requirements.yml`.
 
 The management plane and separate application-host provisioning live in [openshift-gitops](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops) and [demojam-ansible](https://github.com/aiops-ansible-software-factory-demojam/demojam-ansible).
 
-Application details are in `vars/webapp.yml`, loaded by
+Application details are in the `vars` block of
 `playbooks/deploy_webapp.yml`. The shared nginx role manages only the service
 configuration and accepts generic variables; its default document root is the
 standard package path. The production wrapper and Molecule use the same collection
@@ -63,3 +64,8 @@ guests first; retain ownership records after interruptions.
 
 See the [current state](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/blob/main/docs/stable-demo-rehearsal.md)
 and [architecture/workflow XML](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/tree/main/docs/diagrams).
+
+Run Molecule directly; no Makefile wrapper is needed. `MOLECULE_GLOB` selects
+this collection's scenarios under `extensions/molecule/`. Use `molecule converge --all` for convergence or `molecule destroy --all` to recover owned resources,
+with the same exported glob, sandbox environment and saved ownership records.
+See the [Molecule CLI reference](https://docs.ansible.com/projects/molecule/usage/).

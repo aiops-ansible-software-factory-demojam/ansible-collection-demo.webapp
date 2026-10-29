@@ -29,8 +29,8 @@ Role inputs and validation rules are documented in `meta/argument_specs.yml`.
     - role: demo.webapp.nginx
 ```
 
-Keep application settings in a vars file. The demo's page and `/web` path live
-in `vars/webapp.yml`, loaded by `playbooks/deploy_webapp.yml`; they are not generic
+Keep application settings in playbook vars. The demo's page and `/web` path live
+in the `vars` block of `playbooks/deploy_webapp.yml`; they are not generic
 role defaults or inventory settings. The baseline deliberately leaves `/web`
 without a persistent SELinux policy so the incident can demonstrate remediation.
 
