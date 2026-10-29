@@ -1,5 +1,5 @@
 ---
-- name: Validate the nginx configuration inputs
+- name: main | Validate the nginx configuration inputs
   ansible.builtin.assert:
     that:
       - nginx_docroot is match('^/(?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+$')
@@ -9,23 +9,23 @@
       - nginx_listen_port | int < 65536
     fail_msg: Supply an absolute document root without traversal and a valid TCP port.
 
-- name: Install nginx
+- name: main | Install nginx
   ansible.builtin.import_tasks: install.yml
 
-- name: Inspect the installed nginx configuration
+- name: main | Inspect the installed nginx configuration
   ansible.builtin.stat:
     path: /etc/nginx/nginx.conf
   register: __nginx_configuration
 
-- name: Configure nginx when its package is available
+- name: main | Configure nginx when its package is available
   when: not ansible_check_mode or __nginx_configuration.stat.exists
   ansible.builtin.import_tasks: configure.yml
 
-- name: Start nginx when its package is available
+- name: main | Start nginx when its package is available
   when: not ansible_check_mode or __nginx_configuration.stat.exists
   ansible.builtin.import_tasks: service.yml
 
-- name: Explain the fresh-host check-mode plan
+- name: main | Explain the fresh-host check-mode plan
   when: ansible_check_mode and not __nginx_configuration.stat.exists
   ansible.builtin.debug:
     msg: Configuration and service checks will run after the nginx package is installed.

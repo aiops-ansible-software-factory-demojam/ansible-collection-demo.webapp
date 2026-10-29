@@ -1,5 +1,5 @@
 ---
-- name: Deploy the same application entry point used in production
+- name: converge | Deploy the same application entry point used in production
   ansible.builtin.import_playbook: ../../../playbooks/deploy_webapp.yml
   vars:
     webapp_target_group: molecule

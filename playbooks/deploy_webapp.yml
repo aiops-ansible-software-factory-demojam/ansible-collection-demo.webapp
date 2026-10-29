@@ -1,5 +1,5 @@
 ---
-- name: Deploy the nginx demo application from vars
+- name: deploy_webapp | Deploy the nginx demo application from vars
   hosts: "{{ webapp_target_group | default('webapps') }}"
   become: true
   gather_facts: false
@@ -10,7 +10,7 @@
   roles:
     - role: demo.webapp.nginx
   post_tasks:
-    - name: Verify the application response after configuration handlers
+    - name: deploy_webapp | Verify the application response after configuration handlers
       when: not ansible_check_mode
       ansible.builtin.uri:
         url: "http://127.0.0.1:{{ nginx_listen_port | default(80) }}/"

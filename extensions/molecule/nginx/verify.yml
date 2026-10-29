@@ -1,8 +1,8 @@
 ---
-- name: Verify the test hosts
+- name: verify | Verify the test hosts
   ansible.builtin.import_playbook: ../utils/playbooks/verify.yml
 
-- name: Verify nginx serves HTTP with its package worker account
+- name: verify | Verify nginx serves HTTP with its package worker account
   hosts: molecule
   become: true
   gather_facts: false
@@ -10,17 +10,17 @@
     nginx_docroot: /web
     nginx_index_content: "<h1>demojam demo</h1>\n"
   tasks:
-    - name: Read the guest SELinux mode
+    - name: verify | Read the guest SELinux mode
       ansible.builtin.command: getenforce
       register: nginx_selinux_mode
       changed_when: false
 
-    - name: Require nginx to work with SELinux enforcing
+    - name: verify | Require nginx to work with SELinux enforcing
       ansible.builtin.assert:
         that: nginx_selinux_mode.stdout | trim == 'Enforcing'
         fail_msg: The collection must preserve enforcing mode while serving HTTP.
 
-    - name: Request the nginx home page
+    - name: verify | Request the nginx home page
       ansible.builtin.uri:
         url: http://127.0.0.1/
         status_code: 200
@@ -30,11 +30,11 @@
       retries: 6
       delay: 2
 
-    - name: Require the configured application page
+    - name: verify | Require the configured application page
       ansible.builtin.assert:
         that: nginx_index_content in nginx_http.content
 
-    - name: Read nginx process users
+    - name: verify | Read nginx process users
       ansible.builtin.command:
         argv:
           - ps
@@ -45,7 +45,7 @@
       register: nginx_process_users
       changed_when: false
 
-    - name: Require a worker running as the package nginx account
+    - name: verify | Require a worker running as the package nginx account
       ansible.builtin.assert:
         that:
           - "'nginx' in nginx_process_users.stdout_lines | map('trim') | list"

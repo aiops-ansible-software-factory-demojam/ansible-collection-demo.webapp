@@ -51,7 +51,7 @@ class NginxContractTests(unittest.TestCase):
     def test_fresh_host_configuration_phase_is_safe_in_check_mode(self):
         # Start after package management to reproduce the state left by a
         # simulated installation without depending on the operator OS repositories.
-        result = self.run_play({}, start_at='Inspect the installed nginx configuration', check=True)
+        result = self.run_play({}, start_at='main | Inspect the installed nginx configuration', check=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertFalse(Path('/etc/nginx/nginx.conf').exists())
         self.assertIn('changed=0', result.stdout)

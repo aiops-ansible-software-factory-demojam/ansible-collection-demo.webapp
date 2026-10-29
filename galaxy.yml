@@ -1,10 +1,10 @@
 ---
 namespace: demo
 name: webapp
-version: 0.1.0
+version: 1.0.0
 readme: README.md
 authors:
-  - Demo Maintainer
+  - ansible software factory demojam
 description: Demo web application collection with an nginx role and AWS or KubeVirt Molecule tests.
 license:
   - MIT

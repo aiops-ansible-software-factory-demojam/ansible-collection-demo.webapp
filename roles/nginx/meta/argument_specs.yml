@@ -1,24 +1,26 @@
 ---
 argument_specs:
   main:
-    short_description: Configure and run a distribution nginx service
+    short_description: Install and manage Enterprise Linux nginx
     description:
-      - Own nginx.conf, validate changes and reload the service when needed.
-      - Use the package-provided nginx worker account and UID.
+      - Installs the distribution nginx package, renders the main nginx.conf from the role template, validates with nginx -t, and reloads on change.
+      - Uses the package nginx worker account; does not configure SELinux, firewalls, or TLS.
+    author:
+      - ansible software factory demojam
     options:
-      nginx_service_enabled:
-        type: bool
-        default: true
-        description: Enable nginx at boot; the service is always started.
       nginx_docroot:
+        description: Absolute document root path for the managed server block; must not contain parent-directory traversal segments.
         type: path
         default: /usr/share/nginx/html
-        description: Absolute path to the document root without traversal components.
       nginx_index_content:
+        description: When non-empty, writes this content to index.html under the document root; empty leaves existing content unchanged.
         type: str
         default: ''
-        description: Optional index.html content; an empty value leaves existing content alone.
       nginx_listen_port:
+        description: TCP port for the managed HTTP listener (1 through 65535).
         type: int
         default: 80
-        description: TCP port for the managed HTTP server.
+      nginx_service_enabled:
+        description: Whether nginx is enabled at boot; the role always ensures the service is started.
+        type: bool
+        default: true
