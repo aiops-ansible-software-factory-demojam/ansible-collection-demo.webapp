@@ -2,7 +2,7 @@
 
 This collection contains the nginx/SELinux demonstration. The Python vulnerability application lives in `ansible-collection-demo.pythonapp` (`demo.pythonapp`) on a separate RHEL host.
 
-Keep demo page content and document-root settings in `vars/webapp.yml`; use `playbooks/deploy_webapp.yml` as the application entry point. Keep the nginx role reusable and do not put application details in role defaults or inventory.
+Keep demo page content and document-root settings in the `vars` block of `playbooks/deploy_webapp.yml`, the application entry point. Keep the nginx role reusable and do not put application details in role defaults or inventory.
 
 Use fully qualified Ansible module names and keep roles idempotent. Defaults belong in `roles/<role>/defaults/main.yml` with the role prefix. Keep credentials outside the repository.
 
@@ -50,7 +50,7 @@ Prefer an existing built-in or maintained collection module to `command` or
 dependencies in `galaxy.yml` when applicable. Use `ansible.builtin.uri` for HTTP
 APIs. Avoid custom modules/plugins when existing modules and straightforward tasks
 are sufficient; document the specific unsupported capability before adding one.
-Keep application details in vars files, not role defaults or inventory.
+Keep application details in playbook vars, not role defaults or inventory.
 
 If a command is necessary, comment why no suitable module covers it, prefer
 `ansible.builtin.command` with `argv`, and provide accurate change detection,

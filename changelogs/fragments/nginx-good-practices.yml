@@ -2,7 +2,7 @@
 breaking_changes:
   - >-
     The nginx role defaults to the package document root and leaves index content
-    alone. Use playbooks/deploy_webapp.yml to load the demo settings from vars/webapp.yml.
+    alone. Use playbooks/deploy_webapp.yml to load its inline demo settings.
 minor_changes:
   - Validate templated nginx configuration before replacement and reload only on changes.
   - Make configuration and service tasks safe after simulated package installation in fresh-host check mode.

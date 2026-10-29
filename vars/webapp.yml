@@ -1,5 +1,0 @@
----
-# Demo application settings. /web intentionally lacks a persistent SELinux
-# policy in the baseline; the incident's remediation must supply that policy.
-nginx_docroot: /web
-nginx_index_content: "<h1>demojam demo</h1>\n"

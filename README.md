@@ -17,7 +17,7 @@ Source `/etc/profile.d/molecule.sh` and retain its backend, network, credentials
 
 The management plane and separate application-host provisioning live in [openshift-gitops](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops) and [demojam-ansible](https://github.com/aiops-ansible-software-factory-demojam/demojam-ansible).
 
-Application details are in `vars/webapp.yml`, loaded by
+Application details are in the `vars` block of
 `playbooks/deploy_webapp.yml`. The shared nginx role manages only the service
 configuration and accepts generic variables; its default document root is the
 standard package path. The production wrapper and Molecule use the same collection
