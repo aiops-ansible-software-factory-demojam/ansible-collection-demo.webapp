@@ -1,9 +1,0 @@
----
-argument_specs:
-  main:
-    short_description: Show a starter message at verbose logging levels
-    options:
-      example_message:
-        type: str
-        default: Hello from the example role
-        description: Message printed when verbosity is at least one.

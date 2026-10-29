@@ -6,7 +6,7 @@ rendered from a template, checked with `nginx -t` before replacement, and reload
 through a handler only when it changes. This role does not manage SELinux mode
 or add labels, firewall rules, or TLS certificates.
 
-Requires Enterprise Linux 9/10, ansible-core >=2.16, package repository access,
+Requires Enterprise Linux 9/10, ansible-core 2.16.0 or newer, package repository access,
 a service manager, and root privileges. The template replaces the main nginx
 configuration; existing files under `/etc/nginx/conf.d/` remain included and must
 be compatible with the managed server.
@@ -16,7 +16,9 @@ be compatible with the managed server.
 | `nginx_service_enabled` | `true` | Enable at boot; the service is always started. |
 | `nginx_docroot` | `/usr/share/nginx/html` | Absolute document root without traversal components. |
 | `nginx_index_content` | `''` | Optional index page; empty leaves existing content alone. |
-| `nginx_listen_port` | `80` | HTTP port, from 1 through 65535. |
+| `nginx_listen_port` | `80` | HTTP listener port (1 through 65535). |
+
+Role inputs and validation rules are documented in `meta/argument_specs.yml`.
 
 ```yaml
 ---
