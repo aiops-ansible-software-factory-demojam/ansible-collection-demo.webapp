@@ -9,8 +9,9 @@ From the existing Omnigent sandbox:
 ```sh
 ansible-lint roles/nginx extensions/molecule/nginx
 ansible-galaxy collection build --output-path /tmp
-make molecule
-make destroy  # Recover after interruption
+export MOLECULE_GLOB='extensions/molecule/*/molecule.yml'
+molecule test --all
+molecule destroy --all  # Recover after interruption
 ```
 
 Source `/etc/profile.d/molecule.sh` and retain its backend, network, credentials and preloaded dependencies. AWS scenarios use the pinned RHEL 9 and RHEL 10 images; both must finish the full lifecycle, including idempotence, HTTP/worker-identity checks, enforcing SELinux and cleanup. CNV uses the existing CentOS Stream 10 DataSource. Shared lifecycle configuration is under `extensions/molecule/`; the published provisioner is pinned in `requirements-test.yml`.
@@ -50,3 +51,8 @@ guests first; retain ownership records after interruptions.
 
 See the [current state](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/blob/fix/portable-collection-artifacts/docs/stable-demo-rehearsal.md)
 and [architecture/workflow XML](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/tree/fix/portable-collection-artifacts/docs/diagrams).
+
+Run Molecule directly; no Makefile wrapper is needed. `MOLECULE_GLOB` selects
+this collection's scenarios under `extensions/molecule/`. Use `molecule converge --all` for convergence or `molecule destroy --all` to recover owned resources,
+with the same exported glob, sandbox environment and saved ownership records.
+See the [Molecule CLI reference](https://docs.ansible.com/projects/molecule/usage/).
